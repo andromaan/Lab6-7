@@ -38,34 +38,44 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-if (!string.IsNullOrEmpty(connectionString))
+using var scope = app.Services.CreateScope();
+var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+try
 {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    try
+    var retries = 5;
+    while (retries > 0)
     {
-        var retries = 5;
-        while (retries > 0)
+        try
         {
-            try
+            var created = db.Database.EnsureCreated();
+            Console.WriteLine($"Database created: {created}");
+
+            // Seed data if empty
+            if (!db.Students.Any())
             {
-                var created = db.Database.EnsureCreated();
-                Console.WriteLine($"Database created: {created}");
-                break;
+                db.Students.AddRange(Enumerable.Range(1, 100).Select(i => new Student
+                {
+                    FullName = $"Student {i}",
+                    Email = $"student{i}@example.com",
+                    EnrollmentDate = DateTime.UtcNow.AddDays(-i)
+                }));
+                db.SaveChanges();
+                Console.WriteLine("Seeded 100 students.");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Exception during EnsureCreated: {ex.Message}");
-                retries--;
-                if (retries == 0) throw;
-                Thread.Sleep(1000);
-            }
+            break;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception during EnsureCreated: {ex.Message}");
+            retries--;
+            if (retries == 0) throw;
+            Thread.Sleep(1000);
         }
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Fatal error in database initialization: {ex}");
-    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Fatal error in database initialization: {ex}");     
 }
 
 app.MapControllers();

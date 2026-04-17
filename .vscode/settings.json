@@ -1,0 +1,7 @@
+{
+  "cSpell.language": "en, uk",
+  "cSpell.words": ["androman", "signalr"],
+  "terminal.integrated.suggest.enabled": true,
+  "terminal.integrated.suggest.quickSuggestions": true,
+  "github.copilot.terminal.suggest.enabled": true
+}
