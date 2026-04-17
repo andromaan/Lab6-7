@@ -1,0 +1,21 @@
+name: Branch Naming Convention
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Branch Name
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          echo "Checking branch name: $BRANCH_NAME"
+          # Дозволяємо тільки гілки feature/*, fix/*, bugfix/*
+          if [[ ! "$BRANCH_NAME" =~ ^(feature|fix|bugfix)/.*$ ]]; then
+            echo "❌ Помилка: Назва гілки має починатися з 'feature/', 'fix/' або 'bugfix/'."
+            exit 1
+          fi
+          echo "✅ Гілка відповідає вимогам."

@@ -63,14 +63,22 @@ public class StudentController : ControllerBase
             Email = request.Email,
             EnrollmentDate = request.EnrollmentDate
         };
-        await _repository.AddAsync(student);
-        return Created("", student);
+        
+        try 
+        {
+            await _repository.AddAsync(student);
+            return Created("", student);
+        } 
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.ToString());
+        }
     }
-    
+
     [HttpPut]
     public async Task<IActionResult> UpdateAsync([FromBody] UpdateStudentRequest request)
     {
-        var validationResult = await _updateValidator.ValidateAsync(request);
+        var validationResult = await _updateValidator.ValidateAsync(request);   
         if (!validationResult.IsValid)
         {
             var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();

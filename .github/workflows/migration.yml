@@ -1,0 +1,44 @@
+name: DB Migration Check
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  migration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: mysecretpassword
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+          quality: "preview"
+
+      - name: Install EF Core CLI
+        run: dotnet tool install --global dotnet-ef --version 9.0.0-rc.* # Або інша сумісна версія
+
+      - name: Apply EF Core Migrations
+        env:
+          # Використовуємо підняту базу зі сервісу GitHub Actions
+          DB_CONNECTION_STRING: "Host=localhost;Port=5432;Database=testdb;Username=postgres;Password=mysecretpassword"
+        # Перевірка на те, чи міграції застосовуються без помилок
+        run: dotnet ef database update --project Lab6-7-api/Lab6.Api/Lab6.Api.csproj

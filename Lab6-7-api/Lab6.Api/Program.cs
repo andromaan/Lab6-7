@@ -50,8 +50,8 @@ try
             var created = db.Database.EnsureCreated();
             Console.WriteLine($"Database created: {created}");
 
-            // Seed data if empty
-            if (!db.Students.Any())
+            // Seed data ONLY for real database to avoid concurrent issues with in-memory testing
+            if (!string.IsNullOrEmpty(connectionString) && !db.Students.Any())
             {
                 db.Students.AddRange(Enumerable.Range(1, 100).Select(i => new Student
                 {

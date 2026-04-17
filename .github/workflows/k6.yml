@@ -1,0 +1,63 @@
+name: K6 Performance Load Test
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: mysecretpassword
+          POSTGRES_DB: proddb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+          quality: "preview"
+
+      - name: Build API
+        run: dotnet build Lab6-7-api/Lab6.Api/Lab6.Api.csproj -c Release
+
+      - name: Start Background API
+        env:
+          DB_CONNECTION_STRING: "Host=localhost;Port=5432;Database=proddb;Username=postgres;Password=mysecretpassword"
+        # Запускаємо у фоновому режимі та чекаємо 10 секунд на ініціалізацію та Seeder
+        run: |
+          nohup dotnet run --project Lab6-7-api/Lab6.Api/Lab6.Api.csproj -c Release --urls "http://localhost:5111" > api.log 2>&1 &
+          sleep 10
+
+      - name: Setup K6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6 -y
+
+      - name: Run Load Test
+        env:
+          API_URL: "http://localhost:5111/api/student"
+        # Тест k6 запуститься і перевірить API, яке працює на фоні
+        run: k6 run k6/load_test.js
+
+      - name: Dump API Logs (On Failure)
+        if: failure()
+        run: cat api.log
