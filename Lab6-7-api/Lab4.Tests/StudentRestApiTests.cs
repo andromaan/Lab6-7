@@ -17,7 +17,10 @@ public class StudentRestApiTests : IClassFixture<WebApplicationFactory<Program>>
 
     public StudentRestApiTests(WebApplicationFactory<Program> factory)
     {
-        _client = factory.CreateClient();
+        _client = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("DB_CONNECTION_STRING", "");
+        }).CreateClient();
     }
 
     [Fact]
