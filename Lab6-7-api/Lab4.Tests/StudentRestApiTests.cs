@@ -27,15 +27,17 @@ public class StudentRestApiTests : IClassFixture<WebApplicationFactory<Program>>
         var request = new CreateStudentRequest
         {
             FullName = "REST Test User",
-            Email = "rest@example.com",
+            Email = $"rest-{Guid.NewGuid()}@example.com",
             EnrollmentDate = DateTime.UtcNow.AddDays(-1)
         };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/student", request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"ResponseBody: {responseBody}");
 
         // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.Created);
+        response.StatusCode.ShouldBe(HttpStatusCode.Created, responseBody);
     }
 
     [Fact]
