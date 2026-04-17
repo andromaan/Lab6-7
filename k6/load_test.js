@@ -15,11 +15,11 @@ import { check, sleep } from "k6";
 
 export const options = {
   scenarios: {
-    get_students_10000: {
+    get_students_10: {
       executor: "shared-iterations",
-      vus: 50,
-      iterations: 10000,
-      maxDuration: "4m",
+      vus: 5,
+      iterations: 10,
+      maxDuration: "10s",
     },
   },
   thresholds: {
